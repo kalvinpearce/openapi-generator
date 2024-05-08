@@ -23,6 +23,7 @@ These options may be applied as additional-properties (cli) or configOptions (pl
 |disableValidator|Disable validating request-data (header, path, query, body) against OpenAPI Schema Specification.| |false|
 |packageName|Rust crate name (convention: snake_case).| |openapi|
 |packageVersion|Rust crate version.| |null|
+|splitTraits|By default, the generator will create a single `Api` trait. Setting this option to true will create a trait for each operation, allowing the implementations to be split up into different modules| |false|
 
 ## IMPORT MAPPING
 

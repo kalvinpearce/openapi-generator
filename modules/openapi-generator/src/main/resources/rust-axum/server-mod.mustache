@@ -1,6 +1,14 @@
 {{>server-imports}}
-use crate::{Api{{#apiInfo}}{{#apis}}{{#operations}}{{#operation}},
-     {{{operationId}}}Response{{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}
+use crate::{
+{{^splitTraits}}
+     Api,
+{{/splitTraits}}
+{{#splitTraits}}
+     {{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}
+     {{{operationId}}},{{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}
+{{/splitTraits}}
+     {{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}{{{operationId}}}Response,
+     {{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}
 };
 
 {{>server-route}}

@@ -39,14 +39,21 @@ pub const API_VERSION: &str = "{{{.}}}";
 {{/apiInfo}}
 
 /// API
+{{^splitTraits}}
 #[async_trait]
 #[allow(clippy::ptr_arg)]
 pub trait Api {
+{{/splitTraits}}
 {{#apiInfo}}
   {{#apis}}
     {{#operations}}
       {{#operation}}
 
+{{#splitTraits}}
+#[async_trait]
+#[allow(clippy::ptr_arg)]
+pub trait {{{operationId}}} {
+{{/splitTraits}}
             {{#summary}}
                 /// {{{.}}}.
                 ///
@@ -95,11 +102,16 @@ pub trait Api {
                 ) -> Result<{{{operationId}}}Response, String>;
             {{/vendorExtensions}}
 
+{{#splitTraits}}
+}
+{{/splitTraits}}
       {{/operation}}
     {{/operations}}
   {{/apis}}
 {{/apiInfo}}
+{{^splitTraits}}
 }
+{{/splitTraits}}
 
 #[cfg(feature = "server")]
 pub mod server;

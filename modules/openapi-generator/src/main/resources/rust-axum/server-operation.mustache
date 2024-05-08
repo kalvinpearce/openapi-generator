@@ -47,7 +47,12 @@ async fn {{#vendorExtensions}}{{{x-operation-id}}}{{/vendorExtensions}}<I, A>(
 ) -> Result<Response, StatusCode>
 where 
     I: AsRef<A> + Send + Sync,
+{{^splitTraits}}
     A: Api,
+{{/splitTraits}}
+{{#splitTraits}}
+    A: {{operationId}},
+{{/splitTraits}}
 {
 {{#headerParams}}
   {{#-first}}

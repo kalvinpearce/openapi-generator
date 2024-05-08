@@ -2,7 +2,12 @@
 pub fn new<I, A>(api_impl: I) -> Router
 where
     I: AsRef<A> + Clone + Send + Sync + 'static,
+{{^splitTraits}}
     A: Api + 'static,
+{{/splitTraits}}
+{{#splitTraits}}
+    A: {{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}{{operationId}} + {{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}'static,
+{{/splitTraits}}
 {
     // build our application with a route
     Router::new()
