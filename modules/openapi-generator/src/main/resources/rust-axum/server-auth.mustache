@@ -1,0 +1,95 @@
+use std::collections::BTreeSet;
+
+use axum::{
+    async_trait,
+    extract::FromRequestParts,
+    response::{IntoResponse, Response},
+    Json, RequestPartsExt,
+};
+use axum_extra::{
+    headers::{
+        authorization::{Basic, Bearer},
+        Authorization,
+    },
+    TypedHeader,
+};
+use http::{request::Parts, StatusCode};
+use serde_json::json;
+
+#[derive(Debug)]
+pub enum Scopes {
+    Some(std::collections::BTreeSet<String>),
+    All,
+}
+
+#[derive(Debug)]
+pub struct OaiAuth {
+    pub subject: String,
+    pub scopes: Scopes,
+    pub issuer: Option<String>,
+}
+
+pub trait AuthenticationApi {
+    fn bearer_authorization(&self, token: &Bearer) -> Option<OaiAuth>;
+    // fn apikey_authorization(&self, token: &str) -> Option<Auth>;
+    fn basic_authorization(&self, basic: &Basic) -> Option<OaiAuth>;
+}
+
+pub struct BearerAuth(pub Bearer);
+// pub struct ApiKeyAuth(pub String);
+pub struct BasicAuth(pub Basic);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for BearerAuth
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        // Extract the token from the authorization header
+        let TypedHeader(Authorization(bearer)) = parts
+            .extract::<TypedHeader<Authorization<Bearer>>>()
+            .await
+            .map_err(|_| AuthError::MissingCredentials)?;
+
+        Ok(BearerAuth(bearer))
+    }
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for BasicAuth
+where
+    S: Send + Sync + AuthenticationApi,
+{
+    type Rejection = AuthError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        // Extract the token from the authorization header
+        let TypedHeader(Authorization(basic)) = parts
+            .extract::<TypedHeader<Authorization<Basic>>>()
+            .await
+            .map_err(|_| AuthError::MissingCredentials)?;
+
+        Ok(BasicAuth(basic))
+    }
+}
+
+#[derive(Debug)]
+pub enum AuthError {
+    WrongCredentials,
+    MissingCredentials,
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
+            AuthError::MissingCredentials => (StatusCode::UNAUTHORIZED, "Missing credentials"),
+        };
+        let body = Json(json!({
+            "error": error_message,
+        }));
+        (status, body).into_response()
+    }
+}

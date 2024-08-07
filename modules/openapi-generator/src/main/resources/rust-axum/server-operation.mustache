@@ -7,6 +7,16 @@ async fn {{#vendorExtensions}}{{{x-operation-id}}}{{/vendorExtensions}}<I, A>(
 {{#headerParams.size}}
   headers: HeaderMap,
 {{/headerParams.size}}
+{{#hasAuthMethods}}
+{{#authMethods}}
+{{#isBasicBearer}}
+  auth::BearerAuth(bearer): auth::BearerAuth,
+{{/isBasicBearer}}
+{{#isBasicBasic}}
+  auth::BasicAuth(basic): auth::BasicAuth,
+{{/isBasicBasic}}
+{{/authMethods}}
+{{/hasAuthMethods}}
 {{#pathParams.size}}
   Path(path_params): Path<models::{{{operationIdCamelCase}}}PathParams>,
 {{/pathParams.size}}
@@ -47,8 +57,35 @@ async fn {{#vendorExtensions}}{{{x-operation-id}}}{{/vendorExtensions}}<I, A>(
 ) -> Result<Response, StatusCode>
 where
     I: AsRef<A> + Send + Sync,
-    A: apis::{{classFilename}}::{{classnamePascalCase}},
+    A: apis::{{classFilename}}::{{classnamePascalCase}}{{#hasAuthMethods}} + auth::AuthenticationApi{{/hasAuthMethods}},
 {
+{{#hasAuthMethods}}
+  {{#authMethods}}
+    {{#isBasicBearer}}
+      let auth = match api_impl.as_ref().bearer_authorization(&bearer) {
+          Some(auth) => auth,
+          None => {
+              return Response::builder()
+                  .status(StatusCode::UNAUTHORIZED)
+                  .body(Body::empty())
+                  .map_err(|_| StatusCode::UNAUTHORIZED);
+          }
+      };
+    {{/isBasicBearer}}
+    {{#isBasicBasic}}
+      let auth = match api_impl.as_ref().basic_authorization(&basic) {
+          Some(auth) => auth,
+          None => {
+              return Response::builder()
+                  .status(StatusCode::UNAUTHORIZED)
+                  .body(Body::empty())
+                  .map_err(|_| StatusCode::UNAUTHORIZED);
+          }
+      };
+    {{/isBasicBasic}}
+  {{/authMethods}}
+{{/hasAuthMethods}}
+  
 {{#headerParams}}
   {{#-first}}
     // Header parameters
@@ -154,6 +191,9 @@ where
       method,
       host,
       cookies,
+      {{#hasAuthMethods}}
+        auth,
+      {{/hasAuthMethods}}
       {{#headerParams.size}}
         header_params,
       {{/headerParams.size}}

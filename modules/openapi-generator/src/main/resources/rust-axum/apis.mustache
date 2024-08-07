@@ -30,6 +30,9 @@ pub trait {{classnamePascalCase}} {
     method: Method,
     host: Host,
     cookies: CookieJar,
+    {{#hasAuthMethods}}
+    auth: crate::server::auth::OaiAuth,
+    {{/hasAuthMethods}}
     {{#headerParams.size}}
       header_params: models::{{{operationIdCamelCase}}}HeaderParams,
     {{/headerParams.size}}

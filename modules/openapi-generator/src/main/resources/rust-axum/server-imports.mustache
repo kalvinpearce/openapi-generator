@@ -11,3 +11,7 @@ use crate::{header, types::*};
 
 #[allow(unused_imports)]
 use crate::{apis, models};
+{{#hasAuthMethods}}
+
+pub mod auth;
+{{/hasAuthMethods}}
